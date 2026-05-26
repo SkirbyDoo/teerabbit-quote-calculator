@@ -1,9 +1,12 @@
 const LOCATION_LABELS = {
-  front: 'Front', back: 'Back',
-  left_chest: 'Left Chest', right_chest: 'Right Chest', left_sleeve: 'Left Sleeve',
+  front:       'Front',
+  back:        'Back',
+  left_chest:  'Left Chest',
+  right_chest: 'Right Chest',
+  left_sleeve: 'Left Sleeve',
 }
 
-export default function QuoteBreakdown({ quote, printLocations, numColors, customer }) {
+export default function QuoteBreakdown({ quote, printLocations, inkColorsPerLocation, customer }) {
   if (!quote || quote.belowMinimum) return null
 
   return (
@@ -30,18 +33,23 @@ export default function QuoteBreakdown({ quote, printLocations, numColors, custo
         )}
       </div>
 
-      {/* Print details */}
+      {/* Print details — per-location color counts */}
       <div className="mb-5 pb-5 border-b border-gray-100">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Print Details</p>
-        <div className="flex flex-wrap gap-2">
-          {printLocations.map(l => (
-            <span key={l} className="text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full font-medium">
-              {LOCATION_LABELS[l] || l}
-            </span>
-          ))}
-          <span className="text-xs bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full font-medium">
-            {numColors} color{numColors !== 1 ? 's' : ''}
-          </span>
+        <div className="space-y-1.5">
+          {printLocations.map(loc => {
+            const colors = inkColorsPerLocation?.[loc] || 1
+            return (
+              <div key={loc} className="flex items-center justify-between">
+                <span className="text-sm text-gray-700 font-medium">
+                  {LOCATION_LABELS[loc] || loc}
+                </span>
+                <span className="text-xs bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full font-medium">
+                  {colors} color{colors !== 1 ? 's' : ''}
+                </span>
+              </div>
+            )
+          })}
         </div>
       </div>
 
@@ -75,7 +83,16 @@ export default function QuoteBreakdown({ quote, printLocations, numColors, custo
         </div>
         {quote.setupFee > 0 && (
           <div className="flex justify-between text-sm text-gray-600">
-            <span>Screen setup fee ({numColors} color{numColors !== 1 ? 's' : ''} × {printLocations.length} location{printLocations.length !== 1 ? 's' : ''})</span>
+            <span>
+              Screen setup fee
+              {quote.locBreakdown?.length > 0 && (
+                <span className="text-gray-400">
+                  {' '}({quote.locBreakdown.map(l =>
+                    `${l.colors} color${l.colors !== 1 ? 's' : ''} × ${LOCATION_LABELS[l.loc] || l.loc}`
+                  ).join(' + ')})
+                </span>
+              )}
+            </span>
             <span>${quote.setupFee.toFixed(2)}</span>
           </div>
         )}

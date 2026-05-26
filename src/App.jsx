@@ -10,22 +10,42 @@ import QuoteBreakdown from './components/QuoteBreakdown'
 export default function App() {
   const { data, loading, error } = usePricingData()
 
-  const [batches,        setBatches]        = useState([])
-  const [printLocations, setPrintLocations] = useState(['front'])
-  const [numColors,      setNumColors]      = useState(1)
-  const [gateOpen,       setGateOpen]       = useState(false)
-  const [customer,       setCustomer]       = useState(null)
+  const [batches,              setBatches]              = useState([])
+  const [printLocations,       setPrintLocations]       = useState(['front'])
+  const [inkColorsPerLocation, setInkColorsPerLocation] = useState({ front: 1 })
+  const [gateOpen,             setGateOpen]             = useState(false)
+  const [customer,             setCustomer]             = useState(null)
+
+  // Design locks once the first batch is added
+  const designLocked = batches.length > 0
 
   const totalQty = batches.reduce((sum, b) => sum + b.qty, 0)
   const minQty   = data?.settings?.screen_print_min_qty || 36
 
   const quote = useMemo(() => {
     if (!data || !batches.length || !printLocations.length) return null
-    return calculateBatchQuote({ batches, printLocations, numColors, pricingData: data })
-  }, [data, batches, printLocations, numColors])
+    return calculateBatchQuote({ batches, printLocations, inkColorsPerLocation, pricingData: data })
+  }, [data, batches, printLocations, inkColorsPerLocation])
 
   function addBatch(batch)  { setBatches(prev => [...prev, batch]) }
   function removeBatch(id)  { setBatches(prev => prev.filter(b => b.id !== id)) }
+
+  // When a location is toggled, keep inkColorsPerLocation in sync
+  function handleLocationsChange(newLocations) {
+    setPrintLocations(newLocations)
+    setInkColorsPerLocation(prev => {
+      const next = {}
+      for (const loc of newLocations) {
+        next[loc] = prev[loc] || 1
+      }
+      return next
+    })
+  }
+
+  // Update color count for a single location
+  function handleColorsChange(locationId, count) {
+    setInkColorsPerLocation(prev => ({ ...prev, [locationId]: count }))
+  }
 
   function handleGateSubmit(result) {
     setGateOpen(false)
@@ -77,9 +97,10 @@ export default function App() {
         <BatchList    batches={batches}         onRemove={removeBatch} />
         <PrintSettings
           locations={printLocations}
-          numColors={numColors}
-          onLocationsChange={setPrintLocations}
-          onColorsChange={setNumColors}
+          inkColorsPerLocation={inkColorsPerLocation}
+          onLocationsChange={handleLocationsChange}
+          onColorsChange={handleColorsChange}
+          locked={designLocked}
         />
 
         {/* Get Quote bar */}
@@ -91,7 +112,7 @@ export default function App() {
               ) : (
                 <>
                   <p className="font-bold text-gray-800">
-                    {totalQty} piece{totalQty !== 1 ? 's' : ''} · {printLocations.length} location{printLocations.length !== 1 ? 's' : ''} · {numColors} color{numColors !== 1 ? 's' : ''}
+                    {totalQty} piece{totalQty !== 1 ? 's' : ''} · {printLocations.length} location{printLocations.length !== 1 ? 's' : ''}
                   </p>
                   {totalQty < minQty ? (
                     <p className="text-xs text-amber-600 mt-0.5">
@@ -122,7 +143,7 @@ export default function App() {
           <QuoteBreakdown
             quote={quote}
             printLocations={printLocations}
-            numColors={numColors}
+            inkColorsPerLocation={inkColorsPerLocation}
             customer={customer}
           />
         )}
