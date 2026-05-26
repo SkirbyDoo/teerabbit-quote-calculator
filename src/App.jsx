@@ -1,112 +1,138 @@
 import { useState, useMemo } from 'react'
 import { usePricingData } from './hooks/usePricingData'
-import { calculateQuote } from './utils/calculator'
-import GarmentPicker from './components/GarmentPicker'
-import QuantitySelector from './components/QuantitySelector'
-import PrintOptions from './components/PrintOptions'
-import QuoteSummary from './components/QuoteSummary'
-import { SHEET_ID } from './config'
-
-const SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL']
-const defaultQuantities = Object.fromEntries(SIZES.map(s => [s, 0]))
+import { calculateBatchQuote } from './utils/calculator'
+import BatchBuilder from './components/BatchBuilder'
+import BatchList from './components/BatchList'
+import PrintSettings from './components/PrintSettings'
+import EmailGate from './components/EmailGate'
+import QuoteBreakdown from './components/QuoteBreakdown'
 
 export default function App() {
   const { data, loading, error } = usePricingData()
 
-  const [selectedGarment, setSelectedGarment]       = useState(null)
-  const [quantities, setQuantities]                  = useState(defaultQuantities)
-  const [printLocations, setPrintLocations]          = useState(['front'])
-  const [inkColorsPerLocation, setInkColorsPerLocation] = useState({ front: 1 })
+  const [batches,        setBatches]        = useState([])
+  const [printLocations, setPrintLocations] = useState(['front'])
+  const [numColors,      setNumColors]      = useState(1)
+  const [gateOpen,       setGateOpen]       = useState(false)
+  const [customer,       setCustomer]       = useState(null)
+
+  const totalQty = batches.reduce((sum, b) => sum + b.qty, 0)
+  const minQty   = data?.settings?.screen_print_min_qty || 36
 
   const quote = useMemo(() => {
-    if (!data || !selectedGarment) return null
-    return calculateQuote({
-      garment: selectedGarment,
-      quantities,
-      printLocations,
-      inkColorsPerLocation,
-      pricingData: data,
-    })
-  }, [data, selectedGarment, quantities, printLocations, inkColorsPerLocation])
+    if (!data || !batches.length || !printLocations.length) return null
+    return calculateBatchQuote({ batches, printLocations, numColors, pricingData: data })
+  }, [data, batches, printLocations, numColors])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">Loading pricing data…</p>
-        </div>
-      </div>
-    )
+  function addBatch(batch)  { setBatches(prev => [...prev, batch]) }
+  function removeBatch(id)  { setBatches(prev => prev.filter(b => b.id !== id)) }
+
+  function handleGateSubmit(result) {
+    setGateOpen(false)
+    if (result) setCustomer(result)
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 max-w-md text-center">
-          <p className="text-red-700 font-semibold mb-2">Failed to load pricing data</p>
-          <p className="text-red-500 text-sm">{error}</p>
-          <p className="text-gray-500 text-xs mt-3">Check your Google Sheet ID and sharing settings in <code className="bg-gray-100 px-1 rounded">src/config.js</code></p>
-        </div>
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-gray-400 text-sm">Loading pricing…</p>
       </div>
-    )
-  }
+    </div>
+  )
+
+  if (error) return (
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="bg-red-50 border border-red-200 rounded-2xl p-6 max-w-md text-center">
+        <p className="text-red-700 font-semibold mb-1">Failed to load pricing data</p>
+        <p className="text-red-400 text-sm">{error}</p>
+      </div>
+    </div>
+  )
+
+  const readyForQuote = batches.length > 0 && printLocations.length > 0
 
   return (
     <div className="min-h-screen bg-gray-50">
+
       {/* Header */}
       <header className="bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
               Tee<span className="text-brand-500">Rabbit</span>
             </h1>
-            <p className="text-xs text-gray-400 -mt-0.5">Quick Quote Calculator</p>
+            <p className="text-xs text-gray-400 -mt-0.5">Screen Print Quote Calculator</p>
           </div>
-          {SHEET_ID === 'DEMO' && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
-              <p className="text-xs text-amber-700 font-medium">Demo mode · <span className="font-normal">connect your Google Sheet in config.js</span></p>
-            </div>
-          )}
+          <div className="text-right">
+            <p className="text-xs text-gray-400">Screen printing</p>
+            <p className="text-xs font-semibold text-gray-600">36 pc minimum</p>
+          </div>
         </div>
       </header>
 
-      {/* Main */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: steps */}
-          <div className="lg:col-span-2 space-y-6">
-            <GarmentPicker
-              garments={data.garments}
-              selected={selectedGarment}
-              onSelect={setSelectedGarment}
-            />
-            <QuantitySelector
-              quantities={quantities}
-              sizeUpcharges={data.sizeUpcharges}
-              onChange={setQuantities}
-            />
-            <PrintOptions
-              selectedLocations={printLocations}
-              inkColors={inkColorsPerLocation}
-              onLocationsChange={setPrintLocations}
-              onInkColorsChange={setInkColorsPerLocation}
-            />
-          </div>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-          {/* Right: quote */}
-          <div className="lg:col-span-1">
-            <QuoteSummary
-              quote={quote}
-              garment={selectedGarment}
-              quantities={quantities}
-              inkColors={inkColorsPerLocation}
-              printLocations={printLocations}
-              pricingData={data}
-            />
+        <BatchBuilder garments={data.garments} onAdd={addBatch} />
+        <BatchList    batches={batches}         onRemove={removeBatch} />
+        <PrintSettings
+          locations={printLocations}
+          numColors={numColors}
+          onLocationsChange={setPrintLocations}
+          onColorsChange={setNumColors}
+        />
+
+        {/* Get Quote bar */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              {totalQty === 0 ? (
+                <p className="text-gray-400 text-sm">Add items above to build your order</p>
+              ) : (
+                <>
+                  <p className="font-bold text-gray-800">
+                    {totalQty} piece{totalQty !== 1 ? 's' : ''} · {printLocations.length} location{printLocations.length !== 1 ? 's' : ''} · {numColors} color{numColors !== 1 ? 's' : ''}
+                  </p>
+                  {totalQty < minQty ? (
+                    <p className="text-xs text-amber-600 mt-0.5">
+                      Add {minQty - totalQty} more piece{(minQty - totalQty) !== 1 ? 's' : ''} to meet the {minQty}-piece minimum
+                    </p>
+                  ) : (
+                    <p className="text-xs text-green-600 mt-0.5">✓ Meets screen print minimum</p>
+                  )}
+                </>
+              )}
+            </div>
+            <button
+              onClick={() => { setCustomer(null); setGateOpen(true) }}
+              disabled={!readyForQuote}
+              className={`px-8 py-3 rounded-xl font-bold text-sm transition-all duration-150
+                ${readyForQuote
+                  ? 'bg-brand-500 hover:bg-brand-600 text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                }`}
+            >
+              Get My Quote →
+            </button>
           </div>
         </div>
+
+        {/* Full breakdown — revealed after email */}
+        {customer && quote && !quote.belowMinimum && (
+          <QuoteBreakdown
+            quote={quote}
+            printLocations={printLocations}
+            numColors={numColors}
+            customer={customer}
+          />
+        )}
+
       </main>
+
+      {/* Email gate modal */}
+      {gateOpen && (
+        <EmailGate totalQty={totalQty} minQty={minQty} onSubmit={handleGateSubmit} />
+      )}
     </div>
   )
 }

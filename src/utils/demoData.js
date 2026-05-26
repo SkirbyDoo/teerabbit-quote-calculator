@@ -1,18 +1,41 @@
 // Built-in demo data — used when SHEET_ID is set to 'DEMO'
-// Replace with your real Google Sheet once configured.
+// v2 garment structure: apparel_type + gender + tier
 
 export const DEMO_DATA = {
   garments: [
-    { id: 'g1', name: 'Heavy Cotton Tee',        brand: 'Gildan',        category: 'Standard', base_price: 3.50 },
-    { id: 'g2', name: 'Unisex Jersey Tee',        brand: 'Bella+Canvas',  category: 'Premium',  base_price: 6.25 },
-    { id: 'g3', name: 'CVC Crew Tee',             brand: 'Next Level',    category: 'Premium',  base_price: 6.75 },
-    { id: 'g4', name: 'Essential Tee',            brand: 'Port & Company',category: 'Budget',   base_price: 2.75 },
-    { id: 'g5', name: 'Unisex Lightweight Hoodie',brand: 'Bella+Canvas',  category: 'Hoodie',   base_price: 18.00 },
-    { id: 'g6', name: 'Heavy Blend Hoodie',       brand: 'Gildan',        category: 'Hoodie',   base_price: 12.50 },
+    // ── T-Shirts · Unisex ──────────────────────────────────────────────────
+    { id: '5000',   name: 'Gildan Heavy Cotton Tee',           brand: 'Gildan',          apparel_type: 'T-Shirt', gender: 'Unisex',   tier: 'Budget',   base_price: 5.34 },
+    { id: '2000',   name: 'Gildan Ultra Cotton Tee',           brand: 'Gildan',          apparel_type: 'T-Shirt', gender: 'Unisex',   tier: 'Standard', base_price: 5.79 },
+    { id: '3001',   name: 'Bella Canvas Unisex Jersey Tee',    brand: 'Bella Canvas',    apparel_type: 'T-Shirt', gender: 'Unisex',   tier: 'Premium',  base_price: 6.95 },
+
+    // ── T-Shirts · Women's ─────────────────────────────────────────────────
+    { id: 'LPC61',  name: "P&C Ladies Cotton Tee",             brand: 'Port & Company',  apparel_type: 'T-Shirt', gender: "Women's",  tier: 'Budget',   base_price: 5.63 },
+    { id: 'PC54',   name: 'P&C Lightweight Cotton Tee',        brand: 'Port & Company',  apparel_type: 'T-Shirt', gender: "Women's",  tier: 'Standard', base_price: 6.00 },
+    { id: '6004',   name: 'Bella Canvas Womens Relaxed Tee',   brand: 'Bella Canvas',    apparel_type: 'T-Shirt', gender: "Women's",  tier: 'Premium',  base_price: 7.50 },
+
+    // ── T-Shirts · Youth ──────────────────────────────────────────────────
+    { id: '5000B',  name: 'Gildan Youth Cotton Tee',           brand: 'Gildan',          apparel_type: 'T-Shirt', gender: 'Youth',    tier: 'Budget',   base_price: 5.28 },
+    { id: 'PC54Y',  name: 'P&C Youth Cotton Tee 5.5 oz',       brand: 'Port & Company',  apparel_type: 'T-Shirt', gender: 'Youth',    tier: 'Standard', base_price: 5.69 },
+    { id: 'PC61Y',  name: 'P&C Youth Cotton Tee 6.1 oz',       brand: 'Port & Company',  apparel_type: 'T-Shirt', gender: 'Youth',    tier: 'Premium',  base_price: 6.36 },
+
+    // ── Hoodies · Unisex ──────────────────────────────────────────────────
+    { id: '18500',  name: 'Gildan Heavy Blend Hoodie',          brand: 'Gildan',          apparel_type: 'Hoodie',  gender: 'Unisex',   tier: 'Budget',   base_price: 12.50 },
+    { id: '18500',  name: 'Hanes Ecosmart Pullover Hoodie',     brand: 'Hanes',           apparel_type: 'Hoodie',  gender: 'Unisex',   tier: 'Standard', base_price: 15.00 },
+    { id: '3719',   name: 'Bella Canvas Unisex Sponge Hoodie',  brand: 'Bella Canvas',    apparel_type: 'Hoodie',  gender: 'Unisex',   tier: 'Premium',  base_price: 22.00 },
+
+    // ── Hoodies · Youth ───────────────────────────────────────────────────
+    { id: '18500B', name: 'Gildan Youth Heavy Blend Hoodie',    brand: 'Gildan',          apparel_type: 'Hoodie',  gender: 'Youth',    tier: 'Budget',   base_price: 11.00 },
+
+    // ── Tank Tops · Unisex ────────────────────────────────────────────────
+    { id: '2200',   name: 'Gildan Ultra Cotton Tank',           brand: 'Gildan',          apparel_type: 'Tank Top', gender: 'Unisex',  tier: 'Budget',   base_price: 4.50 },
+    { id: '3480',   name: 'Bella Canvas Unisex Jersey Tank',    brand: 'Bella Canvas',    apparel_type: 'Tank Top', gender: 'Unisex',  tier: 'Premium',  base_price: 6.25 },
+
+    // ── Tank Tops · Women's ───────────────────────────────────────────────
+    { id: '8800',   name: 'Gildan Performance Ladies Tank',     brand: 'Gildan',          apparel_type: 'Tank Top', gender: "Women's", tier: 'Budget',   base_price: 4.75 },
+    { id: '8803',   name: 'Bella Canvas Womens Flowy Tank',     brand: 'Bella Canvas',    apparel_type: 'Tank Top', gender: "Women's", tier: 'Premium',  base_price: 7.25 },
   ],
 
   // Screen print price grid — price per shirt PER LOCATION
-  // Row = # ink colors (1–13), Column = quantity breakpoint (use highest breakpoint <= totalQty)
   screenTiers: {
     quantities: [36, 48, 72, 144, 250, 500, 1000, 2500, 5000],
     prices: {
@@ -32,21 +55,9 @@ export const DEMO_DATA = {
     },
   },
 
-  dtfPricing: [
-    { min_qty: 1,  max_qty: 35,   price_per_location: 6.00 },
-    { min_qty: 36, max_qty: 47,   price_per_location: 5.00 },
-    { min_qty: 48, max_qty: 71,   price_per_location: 4.00 },
-    { min_qty: 72, max_qty: 9999, price_per_location: 3.50 },
-  ],
-
-  sizeUpcharges: {
-    'S': 0, 'M': 0, 'L': 0, 'XL': 0, '2XL': 2.00, '3XL': 3.00, '4XL': 4.00,
-  },
-
   settings: {
-    screen_print_setup_fee_per_color: 25.00, // one-time per color per location
+    screen_print_setup_fee_per_color: 25.00,
     screen_print_min_qty: 36,
-    screen_print_min_order: 150.00,
-    screen_print_max_colors: 13,            // above this → "call for pricing"
+    screen_print_max_colors: 13,
   },
 }

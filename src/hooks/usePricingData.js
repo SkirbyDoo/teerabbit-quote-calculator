@@ -11,48 +11,35 @@ async function fetchSheet(tabName) {
     Papa.parse(text, {
       header: true,
       skipEmptyLines: true,
-      complete: (result) => resolve(result.data),
+      complete: r => resolve(r.data),
       error: reject,
     })
   })
 }
 
-// Parse the screen print grid:
-// Header: "Colors" | "" | "36" | "48" | "72" | ... | "10000"
-// Rows:  "1 Color" | "" | "$5.78" | "$3.75" | ...
-// → { quantities: [36,48,...], prices: { 1:[5.78,3.75,...], 2:[...], ... } }
+// Parse the color × qty screen print grid
+// Header: "Colors" | "" | "36" | "48" | ... | "5000"
+// Rows:   "1 Color" | "" | "$5.78" | ...
 function parseScreenTiers(rows) {
   if (!rows.length) return { quantities: [], prices: {} }
-
-  const allHeaders = Object.keys(rows[0])
-  // Keep only headers that are positive integers (qty breakpoints)
-  const qtyHeaders = allHeaders.filter(h => /^\d+$/.test(h.trim()) && parseInt(h) > 0)
-
+  const qtyHeaders = Object.keys(rows[0]).filter(h => /^\d+$/.test(h.trim()) && parseInt(h) > 0)
   const prices = {}
-  rows.forEach(row => {
-    const colorStr = (row['Colors'] || row['colors'] || '').trim()
-    if (!colorStr) return
-    const colorNum = parseInt(colorStr) // "1 Color" → 1, "13 Color" → 13
-    if (isNaN(colorNum) || colorNum < 1) return
 
-    prices[colorNum] = qtyHeaders.map(h => {
-      const raw = (row[h] || '').replace(/[$,\s]/g, '')
-      return parseFloat(raw) || 0
-    })
+  rows.forEach(row => {
+    const colorNum = parseInt(row['Colors'] || row['colors'] || '')
+    if (isNaN(colorNum) || colorNum < 1) return
+    prices[colorNum] = qtyHeaders.map(h => parseFloat((row[h] || '').replace(/[$,\s]/g, '')) || 0)
   })
 
-  // Drop qty columns where every price is 0 (e.g. blank "10000" column)
-  const validIndices = qtyHeaders
+  // Drop columns where all prices are 0 (e.g. blank 10000 column)
+  const validIdx = qtyHeaders
     .map((h, i) => ({ h, i }))
     .filter(({ i }) => Object.values(prices).some(row => row[i] > 0))
 
   return {
-    quantities: validIndices.map(({ h }) => parseInt(h)),
+    quantities: validIdx.map(({ h }) => parseInt(h)),
     prices: Object.fromEntries(
-      Object.entries(prices).map(([color, row]) => [
-        parseInt(color),
-        validIndices.map(({ i }) => row[i]),
-      ])
+      Object.entries(prices).map(([c, row]) => [parseInt(c), validIdx.map(({ i }) => row[i])])
     ),
   }
 }
@@ -71,17 +58,14 @@ export function usePricingData() {
 
     async function load() {
       try {
-        const [rawGarments, rawScreen, rawDtf, rawSizes, rawSettings, rawBrandRules] =
-          await Promise.all([
-            fetchSheet(SHEET_NAMES.garments),
-            fetchSheet(SHEET_NAMES.screenTiers),
-            fetchSheet(SHEET_NAMES.dtfPricing),
-            fetchSheet(SHEET_NAMES.sizeUpcharges),
-            fetchSheet(SHEET_NAMES.settings),
-            fetchSheet(SHEET_NAMES.brandRules),
-          ])
+        const [rawGarments, rawScreen, rawSettings, rawBrandRules] = await Promise.all([
+          fetchSheet(SHEET_NAMES.garments),
+          fetchSheet(SHEET_NAMES.screenTiers),
+          fetchSheet(SHEET_NAMES.settings),
+          fetchSheet(SHEET_NAMES.brandRules),
+        ])
 
-        // Build brand → forced_category lookup from Brand Rules tab
+        // Brand rules: brand → forced tier
         const brandRules = Object.fromEntries(
           rawBrandRules
             .filter(r => r.brand_or_style && r.forced_category)
@@ -89,29 +73,21 @@ export function usePricingData() {
         )
 
         setData({
-          // Apply brand rules: override category if the brand has a rule
           garments: rawGarments.map(g => ({
             ...g,
             base_price: parseFloat(g.base_price) || 0,
-            category: brandRules[g.brand?.trim().toLowerCase()] || g.category,
+            // Support both old (category) and new (tier) column names
+            tier: brandRules[g.brand?.trim().toLowerCase()] || g.tier || g.category,
+            // Support both old (Shirts) and new (T-Shirt/Hoodie/Tank Top) apparel_type
+            apparel_type: g.apparel_type === 'Shirts' ? 'T-Shirt' : (g.apparel_type || 'T-Shirt'),
+            // gender column — may not exist in older sheets
+            gender: g.gender || 'Unisex',
           })),
 
           screenTiers: parseScreenTiers(rawScreen),
 
-          dtfPricing: rawDtf.map(t => ({
-            min_qty: parseInt(t.min_qty),
-            max_qty: parseInt(t.max_qty),
-            price_per_location: parseFloat(t.price_per_location),
-          })),
-
-          sizeUpcharges: Object.fromEntries(
-            rawSizes.map(r => [r.size?.trim(), parseFloat(r.upcharge) || 0])
-          ),
-
           settings: Object.fromEntries(
-            rawSettings
-              .filter(r => r.key && r.value !== undefined)
-              .map(r => [r.key.trim(), parseFloat(r.value)])
+            rawSettings.filter(r => r.key).map(r => [r.key.trim(), parseFloat(r.value)])
           ),
         })
       } catch (err) {
