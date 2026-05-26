@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+  }
+}
+
+@layer components {
+  .step-card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6;
+  }
+
+  .step-number {
+    @apply w-8 h-8 rounded-full bg-brand-500 text-white text-sm font-bold flex items-center justify-center flex-shrink-0;
+  }
+
+  .qty-input {
+    @apply w-16 text-center border border-gray-200 rounded-lg py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent;
+  }
+
+  .garment-card {
+    @apply border-2 rounded-xl p-4 cursor-pointer transition-all duration-150 hover:border-brand-500 hover:shadow-md;
+  }
+
+  .garment-card.selected {
+    @apply border-brand-500 bg-brand-50 shadow-md;
+  }
+
+  .garment-card.unselected {
+    @apply border-gray-200 bg-white;
+  }
+
+  .location-checkbox {
+    @apply flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-150;
+  }
+
+  .location-checkbox.checked {
+    @apply border-brand-500 bg-brand-50;
+  }
+
+  .location-checkbox.unchecked {
+    @apply border-gray-200 bg-white hover:border-brand-300;
+  }
+}
