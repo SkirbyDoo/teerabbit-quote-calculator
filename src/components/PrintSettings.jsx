@@ -6,32 +6,19 @@ const LOCATIONS = [
   { id: 'left_sleeve', label: 'Left Sleeve' },
 ]
 
-// LockIcon SVG
-function LockIcon({ className = 'w-4 h-4' }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round"
-        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-    </svg>
-  )
-}
-
 export default function PrintSettings({
   locations,
   inkColorsPerLocation,
   onLocationsChange,
-  onColorsChange,   // (locationId, newCount) => void
-  locked,
+  onColorsChange,  // (locationId, newCount) => void
 }) {
   function toggle(id) {
-    if (locked) return
     locations.includes(id)
       ? onLocationsChange(locations.filter(l => l !== id))
       : onLocationsChange([...locations, id])
   }
 
   function setColors(loc, delta) {
-    if (locked) return
     const current = inkColorsPerLocation?.[loc] || 1
     const next = Math.min(13, Math.max(1, current + delta))
     onColorsChange(loc, next)
@@ -40,22 +27,9 @@ export default function PrintSettings({
   return (
     <div className="step-card">
       <div className="flex items-center gap-3 mb-5">
-        <div className="step-number">3</div>
+        <div className="step-number">2</div>
         <h2 className="text-lg font-bold text-gray-800">Print Details</h2>
-        {locked && (
-          <span className="ml-auto flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
-            <LockIcon className="w-3.5 h-3.5" />
-            Locked
-          </span>
-        )}
       </div>
-
-      {locked && (
-        <div className="mb-5 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5">
-          <LockIcon className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-          <span>Your design is locked. Remove all items from your order to change print locations or colors.</span>
-        </div>
-      )}
 
       <div className="space-y-5">
         {/* Print Locations */}
@@ -68,15 +42,10 @@ export default function PrintSettings({
                 <button
                   key={loc.id}
                   onClick={() => toggle(loc.id)}
-                  disabled={locked}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition-all duration-100
                     ${on
-                      ? locked
-                        ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-default'
-                        : 'border-brand-500 bg-brand-500 text-white'
-                      : locked
-                        ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-default'
-                        : 'border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-600'
+                      ? 'border-brand-500 bg-brand-500 text-white'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-600'
                     }`}
                 >
                   {loc.label}
@@ -102,9 +71,9 @@ export default function PrintSettings({
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
                         onClick={() => setColors(locId, -1)}
-                        disabled={locked || count <= 1}
+                        disabled={count <= 1}
                         className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-base font-bold transition-colors
-                          ${locked || count <= 1
+                          ${count <= 1
                             ? 'border-gray-100 text-gray-200 cursor-default'
                             : 'border-gray-200 text-gray-500 hover:border-brand-500 hover:text-brand-500'
                           }`}
@@ -115,9 +84,9 @@ export default function PrintSettings({
                       </div>
                       <button
                         onClick={() => setColors(locId, +1)}
-                        disabled={locked || count >= 13}
+                        disabled={count >= 13}
                         className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-base font-bold transition-colors
-                          ${locked || count >= 13
+                          ${count >= 13
                             ? 'border-gray-100 text-gray-200 cursor-default'
                             : 'border-gray-200 text-gray-500 hover:border-brand-500 hover:text-brand-500'
                           }`}
@@ -131,7 +100,7 @@ export default function PrintSettings({
         )}
       </div>
 
-      {locations.length === 0 && !locked && (
+      {locations.length === 0 && (
         <p className="mt-4 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
           Select at least one print location to get a quote.
         </p>

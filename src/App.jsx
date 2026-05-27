@@ -6,45 +6,108 @@ import BatchList from './components/BatchList'
 import PrintSettings from './components/PrintSettings'
 import EmailGate from './components/EmailGate'
 import QuoteBreakdown from './components/QuoteBreakdown'
+import AddMorePrompt from './components/AddMorePrompt'
+import DesignTabs from './components/DesignTabs'
+
+let _designCounter = 1
+function makeDesign() {
+  const num = _designCounter++
+  return {
+    id: Date.now() + num,
+    name: `Design ${num}`,
+    printLocations: ['front'],
+    inkColorsPerLocation: { front: 1 },
+    batches: [],
+  }
+}
 
 export default function App() {
   const { data, loading, error } = usePricingData()
 
-  const [batches,              setBatches]              = useState([])
-  const [printLocations,       setPrintLocations]       = useState(['front'])
-  const [inkColorsPerLocation, setInkColorsPerLocation] = useState({ front: 1 })
-  const [gateOpen,             setGateOpen]             = useState(false)
-  const [customer,             setCustomer]             = useState(null)
+  const [designs,         setDesigns]         = useState(() => { const d = makeDesign(); return [d] })
+  const [activeDesignId,  setActiveDesignId]   = useState(() => designs[0]?.id ?? null)
+  const [lastAdded,       setLastAdded]        = useState(null)  // { batch, designId }
+  const [gateOpen,        setGateOpen]         = useState(false)
+  const [customer,        setCustomer]         = useState(null)
 
-  // Design locks once the first batch is added
-  const designLocked = batches.length > 0
+  const activeDesign = designs.find(d => d.id === activeDesignId) || designs[0]
+  const minQty       = data?.settings?.screen_print_min_qty || 36
+  const totalQty     = designs.reduce((sum, d) => sum + d.batches.reduce((s, b) => s + b.qty, 0), 0)
 
-  const totalQty = batches.reduce((sum, b) => sum + b.qty, 0)
-  const minQty   = data?.settings?.screen_print_min_qty || 36
+  // Per-design quotes
+  const designQuotes = useMemo(() => {
+    if (!data) return []
+    return designs.map(d => ({
+      id: d.id,
+      name: d.name,
+      printLocations: d.printLocations,
+      inkColorsPerLocation: d.inkColorsPerLocation,
+      quote: (d.batches.length && d.printLocations.length)
+        ? calculateBatchQuote({
+            batches: d.batches,
+            printLocations: d.printLocations,
+            inkColorsPerLocation: d.inkColorsPerLocation,
+            pricingData: data,
+          })
+        : null,
+    }))
+  }, [designs, data])
 
-  const quote = useMemo(() => {
-    if (!data || !batches.length || !printLocations.length) return null
-    return calculateBatchQuote({ batches, printLocations, inkColorsPerLocation, pricingData: data })
-  }, [data, batches, printLocations, inkColorsPerLocation])
+  const readyForQuote = designs.some(d => d.batches.length > 0 && d.printLocations.length > 0)
 
-  function addBatch(batch)  { setBatches(prev => [...prev, batch]) }
-  function removeBatch(id)  { setBatches(prev => prev.filter(b => b.id !== id)) }
-
-  // When a location is toggled, keep inkColorsPerLocation in sync
-  function handleLocationsChange(newLocations) {
-    setPrintLocations(newLocations)
-    setInkColorsPerLocation(prev => {
-      const next = {}
-      for (const loc of newLocations) {
-        next[loc] = prev[loc] || 1
-      }
-      return next
-    })
+  // ── batch operations ──────────────────────────────────────────────────────
+  function addBatch(batch) {
+    setDesigns(prev => prev.map(d =>
+      d.id === activeDesign.id
+        ? { ...d, batches: [...d.batches, batch] }
+        : d
+    ))
+    setLastAdded({ batch, designId: activeDesign.id })
   }
 
-  // Update color count for a single location
-  function handleColorsChange(locationId, count) {
-    setInkColorsPerLocation(prev => ({ ...prev, [locationId]: count }))
+  function removeBatch(designId, batchId) {
+    setDesigns(prev => prev.map(d =>
+      d.id === designId
+        ? { ...d, batches: d.batches.filter(b => b.id !== batchId) }
+        : d
+    ))
+    if (lastAdded?.designId === designId) setLastAdded(null)
+  }
+
+  // ── design operations ─────────────────────────────────────────────────────
+  function addNewDesign() {
+    const d = makeDesign()
+    setDesigns(prev => [...prev, d])
+    setActiveDesignId(d.id)
+    setLastAdded(null)
+  }
+
+  function switchDesign(id) {
+    setActiveDesignId(id)
+    setLastAdded(null)
+  }
+
+  // ── print settings for active design ─────────────────────────────────────
+  function handleLocationsChange(locs) {
+    setDesigns(prev => prev.map(d =>
+      d.id === activeDesign.id
+        ? {
+            ...d,
+            printLocations: locs,
+            inkColorsPerLocation: Object.fromEntries(
+              locs.map(l => [l, d.inkColorsPerLocation[l] || 1])
+            ),
+          }
+        : d
+    ))
+  }
+
+  function handleColorsChange(loc, count) {
+    setDesigns(prev => prev.map(d =>
+      d.id === activeDesign.id
+        ? { ...d, inkColorsPerLocation: { ...d.inkColorsPerLocation, [loc]: count } }
+        : d
+    ))
   }
 
   function handleGateSubmit(result) {
@@ -52,6 +115,7 @@ export default function App() {
     if (result) setCustomer(result)
   }
 
+  // ── loading / error states ────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
@@ -69,8 +133,6 @@ export default function App() {
       </div>
     </div>
   )
-
-  const readyForQuote = batches.length > 0 && printLocations.length > 0
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -93,14 +155,43 @@ export default function App() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
+        {/* Design tabs — only shown when there are multiple designs */}
+        {designs.length > 1 && (
+          <DesignTabs
+            designs={designs}
+            activeId={activeDesign.id}
+            onSelect={switchDesign}
+            onAdd={addNewDesign}
+          />
+        )}
+
+        {/* Step 1: Build Your Order */}
         <BatchBuilder garments={data.garments} onAdd={addBatch} />
-        <BatchList    batches={batches}         onRemove={removeBatch} />
+
+        {/* Add More / New Design prompt */}
+        {lastAdded && lastAdded.designId === activeDesign.id && (
+          <AddMorePrompt
+            batch={lastAdded.batch}
+            designName={activeDesign.name}
+            onAddMore={() => setLastAdded(null)}
+            onNewDesign={addNewDesign}
+          />
+        )}
+
+        {/* Step 2: Print Details (for the active design) */}
         <PrintSettings
-          locations={printLocations}
-          inkColorsPerLocation={inkColorsPerLocation}
+          locations={activeDesign.printLocations}
+          inkColorsPerLocation={activeDesign.inkColorsPerLocation}
           onLocationsChange={handleLocationsChange}
           onColorsChange={handleColorsChange}
-          locked={designLocked}
+        />
+
+        {/* Step 3: Your Order (all designs) */}
+        <BatchList
+          designs={designs}
+          activeDesignId={activeDesign.id}
+          onRemoveBatch={removeBatch}
+          onSwitchDesign={switchDesign}
         />
 
         {/* Get Quote bar */}
@@ -112,7 +203,8 @@ export default function App() {
               ) : (
                 <>
                   <p className="font-bold text-gray-800">
-                    {totalQty} piece{totalQty !== 1 ? 's' : ''} · {printLocations.length} location{printLocations.length !== 1 ? 's' : ''}
+                    {totalQty} piece{totalQty !== 1 ? 's' : ''}
+                    {designs.length > 1 && ` · ${designs.filter(d => d.batches.length > 0).length} designs`}
                   </p>
                   {totalQty < minQty ? (
                     <p className="text-xs text-amber-600 mt-0.5">
@@ -139,11 +231,9 @@ export default function App() {
         </div>
 
         {/* Full breakdown — revealed after email */}
-        {customer && quote && !quote.belowMinimum && (
+        {customer && designQuotes.some(dq => dq.quote) && (
           <QuoteBreakdown
-            quote={quote}
-            printLocations={printLocations}
-            inkColorsPerLocation={inkColorsPerLocation}
+            designQuotes={designQuotes}
             customer={customer}
           />
         )}

@@ -78,8 +78,14 @@ export function usePricingData() {
             base_price: parseFloat(g.base_price) || 0,
             // Support both old (category) and new (tier) column names
             tier: brandRules[g.brand?.trim().toLowerCase()] || g.tier || g.category,
-            // Support both old (Shirts) and new (T-Shirt/Hoodie/Tank Top) apparel_type
-            apparel_type: g.apparel_type === 'Shirts' ? 'T-Shirt' : (g.apparel_type || 'T-Shirt'),
+            // Normalize apparel_type to canonical values
+            apparel_type: (function(raw) {
+              const v = (raw || '').trim()
+              if (!v || v === 'Shirts' || v === 'T-Shirts' || v === 'T-Shirt') return 'T-Shirt'
+              if (v === 'Hoodie' || v === 'Hoodies') return 'Hoodie'
+              if (v === 'Tank Top' || v === 'Tank Tops' || v === 'Tank') return 'Tank Top'
+              return v
+            })(g.apparel_type),
             // gender column — may not exist in older sheets
             gender: g.gender || 'Unisex',
           })),
