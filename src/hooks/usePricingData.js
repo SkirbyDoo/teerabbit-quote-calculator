@@ -72,23 +72,32 @@ export function usePricingData() {
             .map(r => [r.brand_or_style.trim().toLowerCase(), r.forced_category.trim()])
         )
 
+        // Normalise all keys — trim whitespace from column names (e.g. " tier " → "tier")
+        const normaliseRow = row =>
+          Object.fromEntries(Object.entries(row).map(([k, v]) => [k.trim(), typeof v === 'string' ? v.trim() : v]))
+
+        const normGarments = rawGarments.map(normaliseRow)
+
         setData({
-          garments: rawGarments.map(g => ({
-            ...g,
-            base_price: parseFloat(g.base_price) || 0,
-            // Support both old (category) and new (tier) column names
-            tier: brandRules[g.brand?.trim().toLowerCase()] || g.tier || g.category,
-            // Normalize apparel_type to canonical values
-            apparel_type: (function(raw) {
-              const v = (raw || '').trim()
-              if (!v || v === 'Shirts' || v === 'T-Shirts' || v === 'T-Shirt') return 'T-Shirt'
-              if (v === 'Hoodie' || v === 'Hoodies') return 'Hoodie'
-              if (v === 'Tank Top' || v === 'Tank Tops' || v === 'Tank') return 'Tank Top'
-              return v
-            })(g.apparel_type),
-            // gender column — may not exist in older sheets
-            gender: g.gender || 'Unisex',
-          })),
+          garments: normGarments
+            // Drop blank rows (no name) and inactive rows (live === "FALSE")
+            .filter(g => g.name && g.name !== '' && g.live !== 'FALSE')
+            .map(g => ({
+              ...g,
+              base_price: parseFloat(g.base_price) || 0,
+              // Support both old (category) and new (tier) column names
+              tier: brandRules[g.brand?.trim().toLowerCase()] || g.tier || g.category,
+              // Normalize apparel_type to canonical values
+              apparel_type: (function(raw) {
+                const v = (raw || '').trim()
+                if (!v || v === 'Shirts' || v === 'T-Shirts' || v === 'T-Shirt') return 'T-Shirt'
+                if (v === 'Hoodie' || v === 'Hoodies') return 'Hoodie'
+                if (v === 'Tank Top' || v === 'Tank Tops' || v === 'Tank') return 'Tank Top'
+                return v
+              })(g.apparel_type),
+              // gender column — may not exist in older sheets
+              gender: g.gender || 'Unisex',
+            })),
 
           screenTiers: parseScreenTiers(rawScreen),
 
