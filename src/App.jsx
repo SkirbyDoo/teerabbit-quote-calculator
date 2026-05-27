@@ -1,17 +1,15 @@
 import { useState, useMemo } from 'react'
 import { usePricingData } from './hooks/usePricingData'
 import { calculateBatchQuote } from './utils/calculator'
-import BatchBuilder from './components/BatchBuilder'
+import OrderBuilder from './components/OrderBuilder'
 import BatchList from './components/BatchList'
-import PrintSettings from './components/PrintSettings'
 import EmailGate from './components/EmailGate'
 import QuoteBreakdown from './components/QuoteBreakdown'
-import AddMorePrompt from './components/AddMorePrompt'
 import DesignTabs from './components/DesignTabs'
 
-let _designCounter = 1
-function makeDesign() {
-  const num = _designCounter++
+// createDesign uses a passed-in number so the counter lives in React state
+// (avoids the module-level counter being stale after HMR)
+function createDesign(num) {
   return {
     id: Date.now() + num,
     name: `Design ${num}`,
@@ -24,11 +22,11 @@ function makeDesign() {
 export default function App() {
   const { data, loading, error } = usePricingData()
 
-  const [designs,         setDesigns]         = useState(() => { const d = makeDesign(); return [d] })
-  const [activeDesignId,  setActiveDesignId]   = useState(() => designs[0]?.id ?? null)
-  const [lastAdded,       setLastAdded]        = useState(null)  // { batch, designId }
-  const [gateOpen,        setGateOpen]         = useState(false)
-  const [customer,        setCustomer]         = useState(null)
+  const [designs,        setDesigns]        = useState(() => [createDesign(1)])
+  const [activeDesignId, setActiveDesignId]  = useState(() => designs[0].id)
+  const [nextDesignNum,  setNextDesignNum]   = useState(2)
+  const [gateOpen,       setGateOpen]        = useState(false)
+  const [customer,       setCustomer]        = useState(null)
 
   const activeDesign = designs.find(d => d.id === activeDesignId) || designs[0]
   const minQty       = data?.settings?.screen_print_min_qty || 36
@@ -54,6 +52,7 @@ export default function App() {
   }, [designs, data])
 
   const readyForQuote = designs.some(d => d.batches.length > 0 && d.printLocations.length > 0)
+  const grandTotal    = designQuotes.reduce((sum, dq) => dq.quote ? sum + dq.quote.total : sum, 0)
 
   // ── batch operations ──────────────────────────────────────────────────────
   function addBatch(batch) {
@@ -62,7 +61,6 @@ export default function App() {
         ? { ...d, batches: [...d.batches, batch] }
         : d
     ))
-    setLastAdded({ batch, designId: activeDesign.id })
   }
 
   function removeBatch(designId, batchId) {
@@ -71,20 +69,18 @@ export default function App() {
         ? { ...d, batches: d.batches.filter(b => b.id !== batchId) }
         : d
     ))
-    if (lastAdded?.designId === designId) setLastAdded(null)
   }
 
   // ── design operations ─────────────────────────────────────────────────────
   function addNewDesign() {
-    const d = makeDesign()
+    const d = createDesign(nextDesignNum)
+    setNextDesignNum(n => n + 1)
     setDesigns(prev => [...prev, d])
     setActiveDesignId(d.id)
-    setLastAdded(null)
   }
 
   function switchDesign(id) {
     setActiveDesignId(id)
-    setLastAdded(null)
   }
 
   // ── print settings for active design ─────────────────────────────────────
@@ -119,7 +115,7 @@ export default function App() {
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
-        <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
         <p className="text-gray-400 text-sm">Loading pricing…</p>
       </div>
     </div>
@@ -137,11 +133,11 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50">
 
-      {/* Header */}
+      {/* Header — compact */}
       <header className="bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+            <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">
               Tee<span className="text-brand-500">Rabbit</span>
             </h1>
             <p className="text-xs text-gray-400 -mt-0.5">Screen Print Quote Calculator</p>
@@ -153,82 +149,37 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-4 space-y-3">
 
-        {/* Design tabs — only shown when there are multiple designs */}
-        {designs.length > 1 && (
-          <DesignTabs
-            designs={designs}
-            activeId={activeDesign.id}
-            onSelect={switchDesign}
-            onAdd={addNewDesign}
-          />
-        )}
-
-        {/* Step 1: Build Your Order */}
-        <BatchBuilder garments={data.garments} onAdd={addBatch} />
-
-        {/* Add More / New Design prompt */}
-        {lastAdded && lastAdded.designId === activeDesign.id && (
-          <AddMorePrompt
-            batch={lastAdded.batch}
-            designName={activeDesign.name}
-            onAddMore={() => setLastAdded(null)}
-            onNewDesign={addNewDesign}
-          />
-        )}
-
-        {/* Step 2: Print Details (for the active design) */}
-        <PrintSettings
-          locations={activeDesign.printLocations}
-          inkColorsPerLocation={activeDesign.inkColorsPerLocation}
-          onLocationsChange={handleLocationsChange}
-          onColorsChange={handleColorsChange}
+        {/* Design tabs — always visible so user can add a new design */}
+        <DesignTabs
+          designs={designs}
+          activeId={activeDesign.id}
+          onSelect={switchDesign}
+          onAdd={addNewDesign}
         />
 
-        {/* Step 3: Your Order (all designs) */}
+        {/* Build Your Order */}
+        <OrderBuilder
+          garments={data.garments}
+          activeDesign={activeDesign}
+          pricingData={data}
+          onAddBatch={addBatch}
+          onRemoveBatch={batchId => removeBatch(activeDesign.id, batchId)}
+          onLocationsChange={handleLocationsChange}
+          onColorsChange={handleColorsChange}
+          onGetQuote={() => { setCustomer(null); setGateOpen(true) }}
+          readyForQuote={readyForQuote}
+        />
+
+        {/* Your Order Summary */}
         <BatchList
           designs={designs}
           activeDesignId={activeDesign.id}
           onRemoveBatch={removeBatch}
           onSwitchDesign={switchDesign}
+          grandTotal={grandTotal}
         />
-
-        {/* Get Quote bar */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              {totalQty === 0 ? (
-                <p className="text-gray-400 text-sm">Add items above to build your order</p>
-              ) : (
-                <>
-                  <p className="font-bold text-gray-800">
-                    {totalQty} piece{totalQty !== 1 ? 's' : ''}
-                    {designs.length > 1 && ` · ${designs.filter(d => d.batches.length > 0).length} designs`}
-                  </p>
-                  {totalQty < minQty ? (
-                    <p className="text-xs text-amber-600 mt-0.5">
-                      Add {minQty - totalQty} more piece{(minQty - totalQty) !== 1 ? 's' : ''} to meet the {minQty}-piece minimum
-                    </p>
-                  ) : (
-                    <p className="text-xs text-green-600 mt-0.5">✓ Meets screen print minimum</p>
-                  )}
-                </>
-              )}
-            </div>
-            <button
-              onClick={() => { setCustomer(null); setGateOpen(true) }}
-              disabled={!readyForQuote}
-              className={`px-8 py-3 rounded-xl font-bold text-sm transition-all duration-150
-                ${readyForQuote
-                  ? 'bg-brand-500 hover:bg-brand-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                }`}
-            >
-              Get My Quote →
-            </button>
-          </div>
-        </div>
 
         {/* Full breakdown — revealed after email */}
         {customer && designQuotes.some(dq => dq.quote) && (

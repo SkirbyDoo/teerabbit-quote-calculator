@@ -1,13 +1,14 @@
 const LOCATION_SHORT = {
-  front: 'Front', back: 'Back', left_chest: 'L.Chest',
-  right_chest: 'R.Chest', left_sleeve: 'Sleeve',
+  front: 'Front', back: 'Back',
+  left_sleeve: 'L.Sleeve', right_sleeve: 'R.Sleeve',
 }
 
 export default function DesignTabs({ designs, activeId, onSelect, onAdd }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-3 py-2">
       <div className="flex items-center gap-2 flex-wrap">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-1">Designs</p>
+
         {designs.map(d => {
           const totalQty = d.batches.reduce((sum, b) => sum + b.qty, 0)
           const isActive = d.id === activeId
@@ -16,7 +17,7 @@ export default function DesignTabs({ designs, activeId, onSelect, onAdd }) {
             <button
               key={d.id}
               onClick={() => onSelect(d.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-sm font-semibold border-2 transition-all duration-100 text-left
+              className={`px-3 py-1 rounded-lg text-sm font-semibold border-2 transition-all duration-100 text-left
                 ${isActive
                   ? 'border-brand-500 bg-brand-500 text-white'
                   : 'border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-600'
@@ -36,9 +37,10 @@ export default function DesignTabs({ designs, activeId, onSelect, onAdd }) {
             </button>
           )
         })}
+
         <button
           onClick={onAdd}
-          className="px-3.5 py-1.5 rounded-xl text-sm font-semibold border-2 border-dashed border-gray-200 text-gray-400 hover:border-brand-300 hover:text-brand-500 transition-colors"
+          className="px-3 py-1 rounded-lg text-sm font-semibold border-2 border-dashed border-gray-200 text-gray-400 hover:border-brand-300 hover:text-brand-500 transition-colors"
         >
           + New design
         </button>

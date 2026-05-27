@@ -102,7 +102,12 @@ export function usePricingData() {
           screenTiers: parseScreenTiers(rawScreen),
 
           settings: Object.fromEntries(
-            rawSettings.filter(r => r.key).map(r => [r.key.trim(), parseFloat(r.value)])
+            rawSettings.filter(r => r.key).map(r => {
+              const raw = (r.value ?? '').toString().trim()
+              const num = parseFloat(raw)
+              // Keep string values (e.g. phone numbers) as strings, parse numbers
+              return [r.key.trim(), isNaN(num) ? raw : num]
+            })
           ),
         })
       } catch (err) {

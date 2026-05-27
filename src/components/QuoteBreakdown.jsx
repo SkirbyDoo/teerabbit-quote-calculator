@@ -1,6 +1,6 @@
 const LOCATION_LABELS = {
-  front: 'Front', back: 'Back', left_chest: 'Left Chest',
-  right_chest: 'Right Chest', left_sleeve: 'Left Sleeve',
+  front: 'Front', back: 'Back',
+  left_sleeve: 'Left Sleeve', right_sleeve: 'Right Sleeve',
 }
 
 function DesignSection({ design, quote }) {

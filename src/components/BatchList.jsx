@@ -5,37 +5,32 @@ const TIER_COLORS = {
 }
 
 const LOCATION_LABELS = {
-  front: 'Front', back: 'Back', left_chest: 'Left Chest',
-  right_chest: 'Right Chest', left_sleeve: 'Left Sleeve',
+  front: 'Front', back: 'Back',
+  left_sleeve: 'Left Sleeve', right_sleeve: 'Right Sleeve',
 }
 
-export default function BatchList({ designs, activeDesignId, onRemoveBatch, onSwitchDesign }) {
+export default function BatchList({ designs, activeDesignId, onRemoveBatch, onSwitchDesign, grandTotal }) {
   const hasAnyBatches = designs.some(d => d.batches.length > 0)
 
-  if (!hasAnyBatches) return (
-    <div className="step-card">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="step-number">3</div>
-        <h2 className="text-lg font-bold text-gray-800">Your Order</h2>
-      </div>
-      <p className="text-sm text-gray-400 text-center py-8">
-        Add items above to build your order.
-      </p>
-    </div>
-  )
+  if (!hasAnyBatches) return null
 
   const totalPieces = designs.reduce((sum, d) => sum + d.batches.reduce((s, b) => s + b.qty, 0), 0)
 
   return (
-    <div className="step-card">
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <div className="step-number">3</div>
-          <h2 className="text-lg font-bold text-gray-800">Your Order</h2>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+      <div className="mb-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-gray-800">Your Order Summary</h2>
+          <span className="text-xs text-gray-400">
+            {totalPieces} piece{totalPieces !== 1 ? 's' : ''} total
+          </span>
         </div>
-        <span className="text-sm font-semibold text-gray-500">
-          {totalPieces} piece{totalPieces !== 1 ? 's' : ''} total
-        </span>
+        {grandTotal > 0 && (
+          <div className="mt-1.5 flex items-baseline gap-2">
+            <span className="text-xs text-gray-400">Estimated subtotal</span>
+            <span className="text-lg font-extrabold text-brand-600 tabular-nums">${grandTotal.toFixed(2)}</span>
+          </div>
+        )}
       </div>
 
       <div className="space-y-5">
