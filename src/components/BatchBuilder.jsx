@@ -1,8 +1,22 @@
 import { useState } from 'react'
 
-const TYPES   = ['T-Shirt', 'Hoodie', 'Tank Top']
-const GENDERS = ['Unisex', "Women's", 'Youth']
-const TIERS   = ['Budget', 'Standard', 'Premium']
+// Preferred display order — unknown values from the sheet are appended after
+const TYPE_ORDER   = ['T-Shirt', 'Hoodie', 'Tank Top', 'Long Sleeve', 'Crewneck', 'Polo']
+const GENDER_ORDER = ['Unisex', "Women's", 'Youth', 'Kids']
+const TIER_ORDER   = ['Budget', 'Standard', 'Premium']
+
+function sortByOrder(values, order) {
+  return [...values].sort((a, b) => {
+    const ai = order.indexOf(a)
+    const bi = order.indexOf(b)
+    if (ai === -1 && bi === -1) return a.localeCompare(b)
+    if (ai === -1) return 1
+    if (bi === -1) return -1
+    return ai - bi
+  })
+}
+
+function unique(arr) { return [...new Set(arr.filter(Boolean))] }
 
 function OptionBtn({ label, active, onClick }) {
   return (
@@ -25,11 +39,24 @@ export default function BatchBuilder({ garments, onAdd }) {
   const [tier,   setTier]   = useState(null)
   const [qty,    setQty]    = useState('')
 
-  // Find available options based on what's in the garments list
-  const availableTypes   = TYPES.filter(t => garments.some(g => g.apparel_type === t))
-  const availableGenders = GENDERS.filter(g => !type   || garments.some(gar => gar.apparel_type === type && gar.gender === g))
-  const availableTiers   = TIERS.filter(t =>  (!type   || garments.some(g => g.apparel_type === type && g.tier === t)) &&
-                                               (!gender || garments.some(g => g.apparel_type === type && g.gender === gender && g.tier === t)))
+  // Derive available options entirely from sheet data — no hardcoded lists
+  const availableTypes = sortByOrder(
+    unique(garments.map(g => g.apparel_type)),
+    TYPE_ORDER
+  )
+
+  const availableGenders = sortByOrder(
+    unique(garments.filter(g => !type || g.apparel_type === type).map(g => g.gender)),
+    GENDER_ORDER
+  )
+
+  const availableTiers = sortByOrder(
+    unique(garments
+      .filter(g => (!type || g.apparel_type === type) && (!gender || g.gender === gender))
+      .map(g => g.tier)
+    ),
+    TIER_ORDER
+  )
 
   // The matched garment for this selection
   const match = (type && gender && tier)
