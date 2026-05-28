@@ -40,7 +40,6 @@ export default function EmailGate({ totalQty, minQty, onSubmit }) {
             </svg>
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-1">Your quote is ready!</h2>
-          <p className="text-gray-500 text-sm">Enter your email and we'll show your price instantly.</p>
         </div>
 
         {/* Below minimum — informational warning, doesn't block */}
@@ -81,13 +80,10 @@ export default function EmailGate({ totalQty, minQty, onSubmit }) {
             type="submit"
             className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 rounded-xl transition-colors text-sm"
           >
-            Show My Price →
+            Email Estimate
           </button>
         </form>
 
-        <p className="text-xs text-gray-400 text-center mt-4">
-          No spam. We'll use your email to send your quote if you request it.
-        </p>
       </div>
     </div>
   )

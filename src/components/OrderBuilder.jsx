@@ -548,9 +548,14 @@ export default function OrderBuilder({
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
             {readyForQuote ? (
-              <p className="text-sm text-gray-500">
-                Get Quote · enter your details to receive your full estimate and breakdown
-              </p>
+              <div>
+                <p className="text-sm text-gray-500">
+                  Get Quote · enter your details to receive your full estimate and breakdown
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  These are general prices but may change slightly in the full estimate.
+                </p>
+              </div>
             ) : (
               <p className="text-sm text-gray-400">
                 Add at least one garment with a print location to continue
