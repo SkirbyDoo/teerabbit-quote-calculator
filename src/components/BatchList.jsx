@@ -49,18 +49,25 @@ export default function BatchList({ designs, activeDesignId, onRemoveBatch, onSw
                     }).join(' · ')}
                   </span>
                 </div>
-                {design.id === activeDesignId ? (
-                  <span className="text-xs bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full font-semibold flex-shrink-0">
-                    Editing
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => onSwitchDesign(design.id)}
-                    className="text-xs text-brand-500 hover:text-brand-600 font-semibold flex-shrink-0"
-                  >
-                    Switch to edit
-                  </button>
-                )}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {dq?.quote?.total > 0 && (
+                    <span className="text-sm font-bold tabular-nums text-gray-700">
+                      ${dq.quote.total.toFixed(2)}
+                    </span>
+                  )}
+                  {design.id === activeDesignId ? (
+                    <span className="text-xs bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full font-semibold">
+                      Editing
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => onSwitchDesign(design.id)}
+                      className="text-xs text-brand-500 hover:text-brand-600 font-semibold"
+                    >
+                      Switch to edit
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Batch rows */}
