@@ -39,7 +39,8 @@ export default function EmailGate({ totalQty, minQty, onSubmit }) {
                 d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Your quote is ready!</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-1">We'll email you a full estimate!</h2>
+          <p className="text-xs text-gray-400 mt-1">Full estimate may change slightly from the quick quote calculator.</p>
         </div>
 
         {/* Below minimum — informational warning, doesn't block */}
