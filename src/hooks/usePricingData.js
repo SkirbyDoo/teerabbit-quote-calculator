@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import Papa from 'papaparse'
-import { SHEET_ID, SHEET_NAMES, sheetUrl } from '../config'
+import { SHEET_ID, SHEET_NAMES, sheetUrl, SETTINGS_OVERRIDES } from '../config'
 import { DEMO_DATA } from '../utils/demoData'
 
 async function fetchSheet(tabName) {
@@ -101,14 +101,28 @@ export function usePricingData() {
 
           screenTiers: parseScreenTiers(rawScreen),
 
-          settings: Object.fromEntries(
-            rawSettings.filter(r => r.key).map(r => {
-              const raw = (r.value ?? '').toString().trim()
-              const num = parseFloat(raw)
-              // Keep string values (e.g. phone numbers) as strings, parse numbers
-              return [r.key.trim(), isNaN(num) ? raw : num]
+          settings: (() => {
+            const fromSheet = Object.fromEntries(
+              rawSettings.filter(r => r.key).map(r => {
+                const raw = (r.value ?? '').toString().trim()
+                // Use Number() not parseFloat() — parseFloat("123-456-7890") silently
+                // returns 123, mangling phone numbers. Number() returns NaN for anything
+                // that isn't a pure number, so strings like emails/phones are kept as-is.
+                const num = Number(raw)
+                return [r.key.trim(), raw === '' ? '' : isNaN(num) ? raw : num]
+              })
+            )
+            // Merge SETTINGS_OVERRIDES: for each key in overrides, use the
+            // override value when the sheet returned empty/null (gviz drops
+            // string values in number-typed columns — see config.js comment).
+            const merged = { ...fromSheet }
+            Object.entries(SETTINGS_OVERRIDES).forEach(([k, v]) => {
+              if (v !== '' && v != null && (merged[k] === '' || merged[k] == null)) {
+                merged[k] = v
+              }
             })
-          ),
+            return merged
+          })(),
         })
       } catch (err) {
         setError(err.message)
