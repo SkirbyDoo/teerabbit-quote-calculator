@@ -84,8 +84,10 @@ export default function App() {
 
   // ── design operations ─────────────────────────────────────────────────────
   function addNewDesign() {
-    const d = createDesign(nextDesignNum)
-    setNextDesignNum(n => n + 1)
+    // Always use current count + 1 so number matches position, not a stale counter
+    const num = designs.length + 1
+    const d = createDesign(num)
+    setNextDesignNum(num + 1)
     setDesigns(prev => [...prev, d])
     setActiveDesignId(d.id)
   }
@@ -96,6 +98,7 @@ export default function App() {
     // Renumber sequentially so deleting Design 1 promotes Design 2 → Design 1, etc.
     const renumbered = remaining.map((d, i) => ({ ...d, name: `Design ${i + 1}` }))
     setDesigns(renumbered)
+    setNextDesignNum(renumbered.length + 1)   // reset so next new design gets right number
     if (activeDesignId === id) setActiveDesignId(renumbered[0].id)
   }
 
