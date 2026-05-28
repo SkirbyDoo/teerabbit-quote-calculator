@@ -79,6 +79,13 @@ export default function App() {
     setActiveDesignId(d.id)
   }
 
+  function deleteDesign(id) {
+    const remaining = designs.filter(d => d.id !== id)
+    if (!remaining.length) return          // safety: never delete the last design
+    setDesigns(remaining)
+    if (activeDesignId === id) setActiveDesignId(remaining[0].id)
+  }
+
   function switchDesign(id) {
     setActiveDesignId(id)
   }
@@ -157,6 +164,7 @@ export default function App() {
           activeId={activeDesign.id}
           onSelect={switchDesign}
           onAdd={addNewDesign}
+          onDelete={deleteDesign}
         />
 
         {/* Build Your Order */}
@@ -179,6 +187,7 @@ export default function App() {
           onRemoveBatch={removeBatch}
           onSwitchDesign={switchDesign}
           grandTotal={grandTotal}
+          designQuotes={designQuotes}
         />
 
         {/* Full breakdown — revealed after email */}
@@ -188,6 +197,26 @@ export default function App() {
             customer={customer}
           />
         )}
+
+        {/* Tips */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Good to Know</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {[
+              'Order more to save more — higher quantities reduce cost per item',
+              'Limit colors per side for best pricing',
+              'White garments cost less than colored ones',
+              'Extended sizes (XXL+) have additional costs not shown here, but will appear in your full quote',
+              'Rush options available — ask us about turnaround times',
+              'Tax added at checkout',
+            ].map(tip => (
+              <div key={tip} className="flex items-start gap-2 text-xs text-gray-500">
+                <span className="text-brand-400 font-bold mt-0.5 flex-shrink-0">–</span>
+                <span>{tip}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
       </main>
 

@@ -52,11 +52,11 @@ function FilterBtn({ label, active, onClick }) {
 
 function StepLabel({ n, label }) {
   return (
-    <div className="flex items-center gap-1.5 mb-2">
-      <span className="w-4 h-4 rounded-full bg-brand-100 text-brand-700 text-[10px] flex items-center justify-center font-bold flex-shrink-0">
+    <div className="flex items-center gap-2 mb-2.5">
+      <span className="w-6 h-6 rounded-full bg-brand-100 text-brand-700 text-sm flex items-center justify-center font-extrabold flex-shrink-0">
         {n}
       </span>
-      <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{label}</p>
+      <p className="text-sm font-bold text-gray-700 uppercase tracking-wide">{label}</p>
     </div>
   )
 }
@@ -142,7 +142,7 @@ export default function OrderBuilder({
   function pickTier(t)   { setTier(p => p === t ? null : t); setSelected(null) }
 
   function handleAdd() {
-    if (!activeGarment || pendingQty < 1) return
+    if (!activeGarment || pendingQty < 12) return
     onAddBatch({
       type:    activeGarment.apparel_type,
       gender:  activeGarment.gender,
@@ -151,8 +151,12 @@ export default function OrderBuilder({
       qty:     pendingQty,
       id:      Date.now(),
     })
+    // Reset everything so the form is clearly ready for the next garment group
+    setType(null)
+    setGender(null)
+    setTier(null)
     setSelected(null)
-    setQty('36')   // reset to default minimum
+    setQty('36')
   }
 
   function toggleLocation(id) {
@@ -166,14 +170,13 @@ export default function OrderBuilder({
     onColorsChange(locId, Math.min(13, Math.max(1, current + delta)))
   }
 
-  const canAdd = activeGarment && pendingQty >= 1
+  const canAdd = activeGarment && pendingQty >= 12
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
       {/* ── Card header ── */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-gray-100">
-        <div className="step-number">1</div>
         <h2 className="text-lg font-bold text-gray-800">Build Your Order</h2>
         <span className="ml-auto text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">
           {activeDesign.name}
@@ -368,34 +371,18 @@ export default function OrderBuilder({
               </div>
             )}
 
-            {/* Exact qty input + Add button */}
-            <div className="flex items-center gap-2">
-              <div className="flex-1">
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="e.g. 48"
-                  value={qty}
-                  onChange={e => setQty(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && canAdd && handleAdd()}
-                  className="qty-input w-full"
-                />
-              </div>
-              <button
-                onClick={handleAdd}
-                disabled={!canAdd}
-                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 flex-shrink-0
-                  ${canAdd
-                    ? 'bg-brand-500 hover:bg-brand-600 text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                  }`}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                Add
-              </button>
-            </div>
+            {/* Exact qty input */}
+            <input
+              type="number"
+              min="12"
+              placeholder="e.g. 48"
+              value={qty}
+              onChange={e => setQty(e.target.value)}
+              className="qty-input w-full"
+            />
+            {pendingQty > 0 && pendingQty < 12 && (
+              <p className="text-xs text-amber-600 mt-1.5">Minimum 12 garments per group</p>
+            )}
           </div>
 
           {/* ── Step 3: Print Details ── */}
@@ -470,6 +457,35 @@ export default function OrderBuilder({
             )}
           </div>
 
+          {/* ── Add Garments / Add to Batch button ── */}
+          <div>
+            {activeGarment && pendingQty > 0 && pendingQty < 12 && (
+              <p className="text-xs text-amber-600 mb-2">Minimum 12 garments per group</p>
+            )}
+            <button
+              onClick={handleAdd}
+              disabled={!canAdd}
+              className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-150
+                ${canAdd
+                  ? 'bg-brand-500 hover:bg-brand-600 text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              {batches.length === 0 ? 'Add Garments' : 'Add to Batch'}
+            </button>
+            {canAdd && (
+              <p className="text-xs text-gray-400 text-center mt-1">
+                {batches.length === 0
+                  ? `Starts batch for ${activeDesign.name} · ${activeGarment?.name} × ${pendingQty}`
+                  : `Adds ${activeGarment?.name} × ${pendingQty} to ${activeDesign.name}'s batch`
+                }
+              </p>
+            )}
+          </div>
+
           {/* ── Live price panel ── */}
           <div className="flex-1">
             <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 flex flex-col gap-3">
@@ -533,7 +549,7 @@ export default function OrderBuilder({
           <div className="flex-1 min-w-0">
             {readyForQuote ? (
               <p className="text-sm text-gray-500">
-                Ready to quote · enter your details to receive your estimate
+                Get Quote · enter your details to receive your full estimate and breakdown
               </p>
             ) : (
               <p className="text-sm text-gray-400">
