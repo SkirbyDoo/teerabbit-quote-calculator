@@ -242,7 +242,7 @@ export default function OrderBuilder({
                 No garments match — try adjusting your filters.
               </div>
             ) : (
-              <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
+              <div className="flex flex-col gap-1 max-h-40 overflow-y-auto rounded-xl border border-gray-200 p-1">
                 {filtered.map(g => {
                   const isSel = activeGarment?.id === g.id
                   return (
@@ -401,7 +401,7 @@ export default function OrderBuilder({
           </div>
 
           {/* ── Step 3: Print Details ── */}
-          <div>
+          <div className="pt-2 border-t border-gray-100">
             <div className="flex items-center justify-between mb-2.5">
               <StepLabel n="3" label="Print Details" />
               {batches.length > 0 && (

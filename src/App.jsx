@@ -56,11 +56,22 @@ export default function App() {
 
   // ── batch operations ──────────────────────────────────────────────────────
   function addBatch(batch) {
-    setDesigns(prev => prev.map(d =>
-      d.id === activeDesign.id
-        ? { ...d, batches: [...d.batches, batch] }
-        : d
-    ))
+    setDesigns(prev => prev.map(d => {
+      if (d.id !== activeDesign.id) return d
+      // If same garment already in this batch, combine qty instead of adding a new row
+      const existing = d.batches.find(b => b.garment.id === batch.garment.id)
+      if (existing) {
+        return {
+          ...d,
+          batches: d.batches.map(b =>
+            b.garment.id === batch.garment.id
+              ? { ...b, qty: b.qty + batch.qty }
+              : b
+          ),
+        }
+      }
+      return { ...d, batches: [...d.batches, batch] }
+    }))
   }
 
   function removeBatch(designId, batchId) {
@@ -82,8 +93,10 @@ export default function App() {
   function deleteDesign(id) {
     const remaining = designs.filter(d => d.id !== id)
     if (!remaining.length) return          // safety: never delete the last design
-    setDesigns(remaining)
-    if (activeDesignId === id) setActiveDesignId(remaining[0].id)
+    // Renumber sequentially so deleting Design 1 promotes Design 2 → Design 1, etc.
+    const renumbered = remaining.map((d, i) => ({ ...d, name: `Design ${i + 1}` }))
+    setDesigns(renumbered)
+    if (activeDesignId === id) setActiveDesignId(renumbered[0].id)
   }
 
   function switchDesign(id) {
