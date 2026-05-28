@@ -362,7 +362,7 @@ export default function OrderBuilder({
                 <div>
                   <p className="text-sm font-semibold text-amber-800">Large order? Let's talk!</p>
                   <p className="text-xs text-amber-700 mt-0.5">
-                    For 1,000+ pieces we offer custom pricing.
+                    For 1,000+ pieces we offer custom pricing. Contact us for a custom quote.
                   </p>
                   <div className="flex flex-wrap gap-3 mt-1.5">
                     {phoneNumber && (
@@ -380,9 +380,6 @@ export default function OrderBuilder({
                         </svg>
                         {emailAddress}
                       </a>
-                    )}
-                    {!phoneNumber && !emailAddress && (
-                      <span className="text-xs text-amber-700">Contact us for a custom quote.</span>
                     )}
                   </div>
                 </div>
