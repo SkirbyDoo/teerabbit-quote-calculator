@@ -49,8 +49,11 @@ export function calculateBatchQuote({ batches, printLocations, inkColorsPerLocat
 
   if (gridLookupFailed) return null
 
-  // No setup fee — screen print pricing is all-in per the pricing tiers
-  const setupFee = 0
+  // Setup fee: fee-per-color × total colors across all active locations
+  // If screen_print_setup_fee_per_color is 0 or missing, setupFee is 0 and won't be shown
+  const feePerColor = settings?.screen_print_setup_fee_per_color || 0
+  const totalColors = locBreakdown.reduce((sum, l) => sum + l.colors, 0)
+  const setupFee    = feePerColor * totalColors
 
   const lines = batches
     .filter(b => b.qty > 0 && b.garment)
