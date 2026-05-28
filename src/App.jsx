@@ -98,11 +98,18 @@ export default function App() {
 
   function deleteDesign(id) {
     const remaining = designs.filter(d => d.id !== id)
-    if (!remaining.length) return          // safety: never delete the last design
+    if (!remaining.length) {
+      // Last design — reset to a fresh blank Design 1 instead of blocking
+      const fresh = createDesign(1)
+      setDesigns([fresh])
+      setNextDesignNum(2)
+      setActiveDesignId(fresh.id)
+      return
+    }
     // Renumber sequentially so deleting Design 1 promotes Design 2 → Design 1, etc.
     const renumbered = remaining.map((d, i) => ({ ...d, name: `Design ${i + 1}` }))
     setDesigns(renumbered)
-    setNextDesignNum(renumbered.length + 1)   // reset so next new design gets right number
+    setNextDesignNum(renumbered.length + 1)
     if (activeDesignId === id) setActiveDesignId(renumbered[0].id)
   }
 
