@@ -51,8 +51,12 @@ export default function App() {
     }))
   }, [designs, data])
 
-  const readyForQuote = designs.some(d => d.batches.length > 0 && d.printLocations.length > 0)
-  const grandTotal    = designQuotes.reduce((sum, dq) => dq.quote ? sum + dq.quote.total : sum, 0)
+  const readyForQuote    = designs.some(d => d.batches.length > 0 && d.printLocations.length > 0)
+  const grandTotal       = designQuotes.reduce((sum, dq) => dq.quote ? sum + dq.quote.total : sum, 0)
+  const belowMinDesigns  = designs.filter(d => {
+    const qty = d.batches.reduce((sum, b) => sum + b.qty, 0)
+    return d.batches.length > 0 && qty < minQty
+  })
 
   // ── batch operations ──────────────────────────────────────────────────────
   function addBatch(batch) {
@@ -194,6 +198,8 @@ export default function App() {
           onColorsChange={handleColorsChange}
           onGetQuote={() => { setCustomer(null); setGateOpen(true) }}
           readyForQuote={readyForQuote}
+          belowMinDesigns={belowMinDesigns}
+          minQty={minQty}
         />
 
         {/* Your Order Summary */}

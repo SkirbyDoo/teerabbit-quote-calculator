@@ -72,6 +72,8 @@ export default function OrderBuilder({
   onColorsChange,
   onGetQuote,
   readyForQuote,
+  belowMinDesigns = [],
+  minQty = 36,
 }) {
   const [type,     setType]     = useState(null)
   const [gender,   setGender]   = useState(null)
@@ -530,40 +532,49 @@ export default function OrderBuilder({
             <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 flex flex-col gap-3">
               {liveQuote ? (
                 <>
-                  <div className="text-center pb-3 border-b border-gray-200">
-                    <p className="text-xs text-gray-400 mb-0.5">Per piece</p>
-                    <p className="text-3xl font-extrabold text-gray-900 tabular-nums leading-none">
-                      ${liveQuote.pricePerShirt.toFixed(2)}
-                    </p>
-                    {liveQuote.belowMinimum && (
-                      <p className="text-xs text-amber-600 mt-1.5">
-                        * estimated at {liveQuote.minQty}-pc minimum pricing
+                  {liveQuote.belowMinimum ? (
+                    /* ── Below minimum — hide price, show warning ── */
+                    <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-3 text-center">
+                      <svg className="w-5 h-5 text-red-400 mx-auto mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                      </svg>
+                      <p className="text-sm font-bold text-red-700">Below minimum</p>
+                      <p className="text-xs text-red-600 mt-1">
+                        {liveQuote.minQty - liveQuote.totalQty} more piece{liveQuote.minQty - liveQuote.totalQty !== 1 ? 's' : ''} needed
+                        to reach the {liveQuote.minQty}-piece minimum.
                       </p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5 text-sm">
-                    <div className="flex justify-between text-gray-600">
-                      <span>Garments + print</span>
-                      <span className="tabular-nums">${liveQuote.subtotal.toFixed(2)}</span>
+                      <p className="text-xs text-red-400 mt-1">Pricing unlocks at {liveQuote.minQty} pieces.</p>
                     </div>
-                    {liveQuote.setupFee > 0 && (
-                      <div className="flex justify-between text-gray-500">
-                        <span className="text-xs self-center">Screen setup</span>
-                        <span className="tabular-nums">${liveQuote.setupFee.toFixed(2)}</span>
+                  ) : (
+                    /* ── Meets minimum — show full pricing ── */
+                    <>
+                      <div className="text-center pb-3 border-b border-gray-200">
+                        <p className="text-xs text-gray-400 mb-0.5">Per piece</p>
+                        <p className="text-3xl font-extrabold text-gray-900 tabular-nums leading-none">
+                          ${liveQuote.pricePerShirt.toFixed(2)}
+                        </p>
                       </div>
-                    )}
-                    <div className="flex justify-between font-bold text-gray-900 pt-1.5 border-t border-gray-200">
-                      <span>Subtotal</span>
-                      <span className="tabular-nums text-brand-600">${liveQuote.total.toFixed(2)}</span>
-                    </div>
-                    <p className="text-xs text-gray-400">
-                      {liveQuote.totalQty} piece{liveQuote.totalQty !== 1 ? 's' : ''}
-                      {liveQuote.belowMinimum
-                        ? ` · needs ${liveQuote.minQty - liveQuote.totalQty} more to meet ${liveQuote.minQty}-pc minimum`
-                        : ' · ✓ meets minimum'
-                      }
-                    </p>
-                  </div>
+                      <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between text-gray-600">
+                          <span>Garments + print</span>
+                          <span className="tabular-nums">${liveQuote.subtotal.toFixed(2)}</span>
+                        </div>
+                        {liveQuote.setupFee > 0 && (
+                          <div className="flex justify-between text-gray-500">
+                            <span className="text-xs self-center">Screen setup</span>
+                            <span className="tabular-nums">${liveQuote.setupFee.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-bold text-gray-900 pt-1.5 border-t border-gray-200">
+                          <span>Subtotal</span>
+                          <span className="tabular-nums text-brand-600">${liveQuote.total.toFixed(2)}</span>
+                        </div>
+                        <p className="text-xs text-gray-400">
+                          {liveQuote.totalQty} piece{liveQuote.totalQty !== 1 ? 's' : ''} · ✓ meets minimum
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </>
               ) : (
                 <div className="py-6 text-center">
@@ -584,9 +595,29 @@ export default function OrderBuilder({
       {/* ════ Step 4: Submit Quote — full-width footer ════ */}
       <div className="border-t border-gray-100 px-4 py-4 bg-gray-50/60">
         <StepLabel n="4" label="Submit Quote" />
+
+        {/* Below-minimum blocking warning */}
+        {belowMinDesigns.length > 0 && (
+          <div className="mb-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            <p className="text-sm font-bold text-red-700 mb-1">Fix before getting a quote:</p>
+            {belowMinDesigns.map(d => {
+              const qty = d.batches.reduce((sum, b) => sum + b.qty, 0)
+              return (
+                <p key={d.id} className="text-xs text-red-600">
+                  {d.name} — {qty} of {minQty} pieces minimum ({minQty - qty} more needed)
+                </p>
+              )
+            })}
+          </div>
+        )}
+
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
-            {readyForQuote ? (
+            {belowMinDesigns.length > 0 ? (
+              <p className="text-sm text-red-500">
+                Increase quantities above to unlock your quote.
+              </p>
+            ) : readyForQuote ? (
               <div>
                 <p className="text-sm text-gray-500">
                   Get Quote · enter your details to receive your full estimate and breakdown
@@ -603,9 +634,9 @@ export default function OrderBuilder({
           </div>
           <button
             onClick={onGetQuote}
-            disabled={!readyForQuote}
+            disabled={!readyForQuote || belowMinDesigns.length > 0}
             className={`px-8 py-3 rounded-xl font-bold text-sm transition-all duration-150 flex-shrink-0
-              ${readyForQuote
+              ${readyForQuote && belowMinDesigns.length === 0
                 ? 'bg-brand-500 hover:bg-brand-600 text-white shadow-sm'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
