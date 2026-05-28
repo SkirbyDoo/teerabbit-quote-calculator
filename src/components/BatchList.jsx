@@ -50,11 +50,6 @@ export default function BatchList({ designs, activeDesignId, onRemoveBatch, onSw
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {dq?.quote?.total > 0 && (
-                    <span className="text-sm font-bold tabular-nums text-gray-700">
-                      ${dq.quote.total.toFixed(2)}
-                    </span>
-                  )}
                   {design.id === activeDesignId ? (
                     <span className="text-xs bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full font-semibold">
                       Editing
@@ -119,6 +114,16 @@ export default function BatchList({ designs, activeDesignId, onRemoveBatch, onSw
                   )
                 })}
               </div>
+
+              {/* Per-design total */}
+              {dq?.quote?.total > 0 && (
+                <div className="flex justify-end pt-2 mt-1 border-t border-gray-100">
+                  <div className="text-right">
+                    <p className="text-xs text-gray-400">{design.name} total</p>
+                    <p className="text-sm font-bold text-gray-800 tabular-nums">${dq.quote.total.toFixed(2)}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )
         })}
