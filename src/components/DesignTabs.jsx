@@ -43,17 +43,14 @@ export default function DesignTabs({ designs, activeId, onSelect, onAdd, onDelet
                 )}
               </button>
 
-              {/* Delete button — always visible; disabled when only one design */}
+              {/* Delete button — always clickable; App's deleteDesign guards against removing last design */}
               <button
-                onClick={() => canDelete && onDelete(d.id)}
-                title={canDelete ? `Delete ${d.name}` : 'Cannot delete the only design'}
-                disabled={!canDelete}
+                onClick={() => onDelete(d.id)}
+                title={`Delete ${d.name}`}
                 className={`mr-1.5 w-6 h-6 rounded-full flex items-center justify-center transition-colors flex-shrink-0
-                  ${!canDelete
-                    ? 'opacity-30 cursor-not-allowed ' + (isActive ? 'text-white' : 'text-gray-400')
-                    : isActive
-                      ? 'text-white/80 hover:bg-white/20 hover:text-white'
-                      : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
+                  ${isActive
+                    ? 'text-white/80 hover:bg-white/20 hover:text-white'
+                    : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
                   }`}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
