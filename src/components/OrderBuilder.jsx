@@ -81,8 +81,9 @@ export default function OrderBuilder({
 
   const { printLocations, inkColorsPerLocation, batches } = activeDesign
 
-  // Phone number for large-order notice
-  const phoneNumber = pricingData?.settings?.contact_phone
+  // Contact info for large-order notice
+  const phoneNumber  = pricingData?.settings?.contact_phone
+  const emailAddress = pricingData?.settings?.contact_email
 
   // ── Filter derivation ──────────────────────────────────────────────────────
   const availableTypes = useMemo(() =>
@@ -362,11 +363,28 @@ export default function OrderBuilder({
                   <p className="text-sm font-semibold text-amber-800">Large order? Let's talk!</p>
                   <p className="text-xs text-amber-700 mt-0.5">
                     For 1,000+ pieces we offer custom pricing.
-                    {phoneNumber
-                      ? <> Call us: <a href={`tel:${phoneNumber}`} className="font-bold underline">{phoneNumber}</a></>
-                      : <> Contact us for a custom quote.</>
-                    }
                   </p>
+                  <div className="flex flex-wrap gap-3 mt-1.5">
+                    {phoneNumber && (
+                      <a href={`tel:${phoneNumber}`} className="flex items-center gap-1 text-xs font-bold text-amber-800 underline hover:text-amber-900">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        {phoneNumber}
+                      </a>
+                    )}
+                    {emailAddress && (
+                      <a href={`mailto:${emailAddress}`} className="flex items-center gap-1 text-xs font-bold text-amber-800 underline hover:text-amber-900">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        {emailAddress}
+                      </a>
+                    )}
+                    {!phoneNumber && !emailAddress && (
+                      <span className="text-xs text-amber-700">Contact us for a custom quote.</span>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
