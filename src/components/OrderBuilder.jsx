@@ -187,7 +187,7 @@ export default function OrderBuilder({
       <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
 
         {/* ════ LEFT — Step 1: Select Apparel ════ */}
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 min-w-0">
 
           <StepLabel n="1" label="Select Apparel" />
 
@@ -310,7 +310,7 @@ export default function OrderBuilder({
         </div>
 
         {/* ════ RIGHT — Steps 2 & 3 ════ */}
-        <div className="p-4 flex flex-col gap-4">
+        <div className="p-4 flex flex-col gap-4 min-w-0">
 
           {/* ── Step 2: Quantity ── */}
           <div>
