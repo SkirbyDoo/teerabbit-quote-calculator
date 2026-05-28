@@ -172,7 +172,7 @@ export default function App() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">
-              Tee<span className="text-brand-500">Rabbit</span>
+              {data.settings?.business_name || 'TeeRabbit'}
             </h1>
             <p className="text-xs text-gray-400 -mt-0.5">Screen Print Quote Calculator</p>
           </div>
