@@ -387,21 +387,37 @@ export default function OrderBuilder({
 
           {/* ── Step 3: Print Details ── */}
           <div>
-            <StepLabel n="3" label="Print Details" />
+            <div className="flex items-center justify-between mb-2.5">
+              <StepLabel n="3" label="Print Details" />
+              {batches.length > 0 && (
+                <span className="flex items-center gap-1 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full -mt-2.5">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  Locked
+                </span>
+              )}
+            </div>
 
             <div className="mb-3">
               <p className="text-xs text-gray-400 mb-2">Location(s)</p>
               <div className="flex flex-wrap gap-2">
                 {LOCATIONS.map(loc => {
                   const on = printLocations.includes(loc.id)
+                  const locked = batches.length > 0
                   return (
                     <button
                       key={loc.id}
-                      onClick={() => toggleLocation(loc.id)}
+                      onClick={() => !locked && toggleLocation(loc.id)}
+                      disabled={locked}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium border-2 transition-all duration-100
-                        ${on
-                          ? 'border-brand-500 bg-brand-500 text-white'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-600'
+                        ${locked
+                          ? on
+                            ? 'border-brand-400 bg-brand-400 text-white opacity-70 cursor-default'
+                            : 'border-gray-100 bg-gray-50 text-gray-300 cursor-default'
+                          : on
+                            ? 'border-brand-500 bg-brand-500 text-white'
+                            : 'border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-600'
                         }`}
                     >
                       {loc.label}
@@ -417,6 +433,7 @@ export default function OrderBuilder({
                 {printLocations.map(locId => {
                   const locLabel = LOCATIONS.find(l => l.id === locId)?.label || locId
                   const count = inkColorsPerLocation?.[locId] || 1
+                  const locked = batches.length > 0
                   return (
                     <div
                       key={locId}
@@ -425,20 +442,20 @@ export default function OrderBuilder({
                       <span className="text-xs font-medium text-gray-700 flex-1 min-w-0 truncate">{locLabel}</span>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         <button
-                          onClick={() => adjustColors(locId, -1)}
-                          disabled={count <= 1}
+                          onClick={() => !locked && adjustColors(locId, -1)}
+                          disabled={locked || count <= 1}
                           className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-colors
-                            ${count <= 1
+                            ${locked || count <= 1
                               ? 'border-gray-100 text-gray-200 cursor-default'
                               : 'border-gray-200 text-gray-500 hover:border-brand-500 hover:text-brand-500'
                             }`}
                         >−</button>
                         <span className="text-sm font-bold text-gray-800 w-5 text-center tabular-nums">{count}</span>
                         <button
-                          onClick={() => adjustColors(locId, +1)}
-                          disabled={count >= 13}
+                          onClick={() => !locked && adjustColors(locId, +1)}
+                          disabled={locked || count >= 13}
                           className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-colors
-                            ${count >= 13
+                            ${locked || count >= 13
                               ? 'border-gray-100 text-gray-200 cursor-default'
                               : 'border-gray-200 text-gray-500 hover:border-brand-500 hover:text-brand-500'
                             }`}
@@ -447,6 +464,11 @@ export default function OrderBuilder({
                     </div>
                   )
                 })}
+                {batches.length > 0 && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Remove all garments to change print settings.
+                  </p>
+                )}
               </div>
             )}
 
