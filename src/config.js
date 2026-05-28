@@ -17,5 +17,6 @@ export const SHEET_NAMES = {
 }
 
 // Uses the gviz/tq endpoint — works by tab name, no GID needed
+// cache param busts Google's server-side cache so new sheet values appear immediately
 export const sheetUrl = (tabName) =>
-  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}&cache=${Date.now()}`
