@@ -190,7 +190,7 @@ export default function OrderBuilder({
       <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
 
         {/* ════ LEFT — Step 1: Select Apparel ════ */}
-        <div className="p-4 space-y-4 min-w-0">
+        <div className="p-4 flex flex-col gap-4 min-w-0">
 
           <StepLabel n="1" label="Select Apparel" />
 
@@ -228,8 +228,8 @@ export default function OrderBuilder({
             )}
           </div>
 
-          {/* Garment card list */}
-          <div>
+          {/* Garment card list — flex-1 so it fills remaining left-column height */}
+          <div className="flex-1 flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 {type ? 'Choose Garment' : 'All Garments'}
@@ -244,8 +244,8 @@ export default function OrderBuilder({
                 No garments match — try adjusting your filters.
               </div>
             ) : (
-              <div className="rounded-xl border border-gray-200 overflow-hidden">
-              <div className="flex flex-col gap-1 max-h-40 overflow-y-auto p-1">
+              <div className="rounded-xl border border-gray-200 overflow-hidden flex-1 flex flex-col min-h-0">
+              <div className="flex flex-col gap-1 flex-1 overflow-y-auto p-1">
                 {filtered.map(g => {
                   const isSel = activeGarment?.id === g.id
                   return (
