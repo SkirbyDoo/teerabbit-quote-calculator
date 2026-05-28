@@ -242,7 +242,8 @@ export default function OrderBuilder({
                 No garments match — try adjusting your filters.
               </div>
             ) : (
-              <div className="flex flex-col gap-1 max-h-40 overflow-y-auto rounded-xl border border-gray-200 p-1">
+              <div className="rounded-xl border border-gray-200 overflow-hidden">
+              <div className="flex flex-col gap-1 max-h-40 overflow-y-auto p-1">
                 {filtered.map(g => {
                   const isSel = activeGarment?.id === g.id
                   return (
@@ -274,6 +275,7 @@ export default function OrderBuilder({
                     </button>
                   )
                 })}
+              </div>
               </div>
             )}
           </div>
