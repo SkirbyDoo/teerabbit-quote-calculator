@@ -102,19 +102,59 @@ export function usePricingData() {
           screenTiers: parseScreenTiers(rawScreen),
 
           settings: (() => {
-            const fromSheet = Object.fromEntries(
-              rawSettings.filter(r => r.key).map(r => {
-                const raw = (r.value ?? '').toString().trim()
-                // Use Number() not parseFloat() — parseFloat("123-456-7890") silently
-                // returns 123, mangling phone numbers. Number() returns NaN for anything
-                // that isn't a pure number, so strings like emails/phones are kept as-is.
-                const num = Number(raw)
-                return [r.key.trim(), raw === '' ? '' : isNaN(num) ? raw : num]
-              })
+            // gviz uses the sheet's row 1 as CSV column headers. If A1/B1 are
+            // multi-line cells, gviz collapses each cell's lines into one
+            // space-separated string, giving garbled column names like
+            // "key business_name contact_email contact_phone" instead of "key".
+            //
+            // We handle BOTH the clean format and the garbled format:
+            //   Clean   → columns are named "key" and "value"
+            //   Garbled → columns are named with space-joined cell contents
+
+            const colNames = rawSettings.length > 0 ? Object.keys(rawSettings[0]) : []
+            const keyColName = colNames[0] ?? 'key'
+            const valColName = colNames[1] ?? 'value'
+            const isGarbled  = keyColName !== 'key' || valColName !== 'value'
+
+            // ── 1. Parse every data row using actual column names (by index) ──
+            const fromRows = Object.fromEntries(
+              rawSettings
+                .filter(r => {
+                  const k = (r[keyColName] ?? '').toString().trim()
+                  return k.length > 0 && k.length < 80 && !k.startsWith('Important')
+                })
+                .map(r => {
+                  const rawKey = r[keyColName].trim()
+                  const raw    = (r[valColName] ?? '').toString().trim()
+                  const num    = Number(raw)
+                  return [rawKey, raw === '' ? '' : isNaN(num) ? raw : num]
+                })
             )
-            // Merge SETTINGS_OVERRIDES: for each key in overrides, use the
-            // override value when the sheet returned empty/null (gviz drops
-            // string values in number-typed columns — see config.js comment).
+
+            // ── 2. If garbled, recover text settings from the column names ──
+            // The garbled column name encodes: "key business_name contact_email …"
+            // The garbled value  name encodes: "value Your Shop Name me@… 123-…"
+            const fromHeader = {}
+            if (isGarbled) {
+              const hKeys = keyColName.split(/\s+/)
+                .filter(t => /^[a-z][a-z0-9_]*$/.test(t) && t !== 'key')
+              const hVals = valColName.split(/\s+/).filter(t => t !== 'value')
+
+              const emailVal = hVals.find(t => /@/.test(t)) || ''
+              const phoneVal = hVals.find(t => /^\+?[\d][\d\-\.\(\)]{5,}$/.test(t)) || ''
+              const used     = new Set([emailVal, phoneVal].filter(Boolean))
+              const bizName  = hVals.filter(t => !used.has(t)).join(' ')
+
+              for (const key of hKeys) {
+                if      (key === 'contact_email') fromHeader[key] = emailVal
+                else if (key === 'contact_phone') fromHeader[key] = phoneVal
+                else if (key === 'business_name') fromHeader[key] = bizName
+              }
+            }
+
+            // fromRows wins over fromHeader (in case user already fixed some rows)
+            const fromSheet = { ...fromHeader, ...fromRows }
+
             const merged = { ...fromSheet }
             Object.entries(SETTINGS_OVERRIDES).forEach(([k, v]) => {
               if (v !== '' && v != null && (merged[k] === '' || merged[k] == null)) {
